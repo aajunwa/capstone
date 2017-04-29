@@ -1,28 +1,25 @@
 ---
-title: "Capstone ideas"
-output: html_document
+title: "Student Alcohol Consumption "
+author: "Olufemi George"
+date: "12 April 2017"
+output: pdf_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+Social, gender and study data from secondary school students
 
-## R Markdown
+The data was obtained in a survey of students math and Portuguese language courses in secondary school. It contains a lot of interesting social, gender and study information about students. You can use it for some EDA or try to predict students final grade.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+The problem here is to determine the impact of alcohol and other variables on the grades of students and also investigate any other variables which may impact the grades.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+My client would ideally be the school authorities who could capture this information when doing entry screening of students. The captured demographics could help them decide which kinwd of students ould be most successful and plan for those, based on the model, who may not be and plan remedial actions eg extra classes etc
 
-```{r cars}
-summary(cars)
-```
+I assume the data was captured via student survey of math and Portuguese students and contains information on relationships, drinking patterns, demographics and course grades.
 
-## Including Plots
+The approach would be to first use Exploratory Data Analysis to determine missing data, outliers (decide on what to do with them), relationships between variables etc and other correlations. 
 
-You can also embed plots, for example:
+After this based on the EDA, I will now determine how drinking impacts the final grades and also any other key influencers.
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
+My deliverables will be code, a paper for publishing and a slide deck.
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Data Source can be found below;
+https://archive.ics.uci.edu/ml/datasets/STUDENT+ALCOHOL+CONSUMPTION
