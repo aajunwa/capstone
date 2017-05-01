@@ -36,7 +36,9 @@ df.merged$grade<- ifelse(df.merged$G3>=9,'Pass','Fail')
 df.merged$grade<-as.factor(df.merged$grade)
 ggplot(df.merged, aes(x=Walc,y=G3, group=Walc)) +
   geom_boxplot()
-table(df.merged$age)
+#weekly alcohol levels vs passing grade
+#plot(is.character(df.merged$grade)~df.merged$Walc)
+#table(df.merged$age)
 boxplot(df.merged$G3~df.merged$age)
 # school support vs grades
 ggplot(df.merged, aes(x=schoolsup, y=G3, group=schoolsup)) +
