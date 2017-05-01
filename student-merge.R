@@ -1,5 +1,6 @@
 library(ggplot2)
 library(dplyr)
+library(caret)
 d1=read.table("student-mat.csv",sep=",",header=TRUE)
 d2=read.table("student-por.csv",sep=",",header=TRUE)
 d4=merge(d1,d2,by=c("school","sex","age","address","famsize","Pstatus",
@@ -27,32 +28,37 @@ df.merged$avggrades=rowMeans(cbind(df.merged$G1,df.merged$G2,df.merged$G3))
 # and drop grades in 3 marking periods.
 #df.merged<-df.merged[,-(31:33)]
 # grades vs Weekly alcohol
-ggplot(df.merged, aes(x=Walc,y=avggrades, group=Walc)) +
+str(df.merged)
+df.merged<-df.merged[,-31:-32]
+# create pass/fail grade
+df.merged$grade<- ifelse(df.merged$G3>=9,'Pass','Fail')
+#convert to factor..why is it 1 and 2?
+df.merged$grade<-as.factor(df.merged$grade)
+ggplot(df.merged, aes(x=Walc,y=G3, group=Walc)) +
   geom_boxplot()
 table(df.merged$age)
-boxplot(df.merged$avggrades~df.merged$age)
+boxplot(df.merged$G3~df.merged$age)
 # school support vs grades
-ggplot(df.merged, aes(x=schoolsup, y=avggrades, group=schoolsup)) +
+ggplot(df.merged, aes(x=schoolsup, y=G3, group=schoolsup)) +
   geom_boxplot()
 # grades vs daily alcohol
-ggplot(df.merged, aes(x=Dalc, y=avggrades, group=Dalc)) +
+ggplot(df.merged, aes(x=Dalc, y=G3, group=Dalc)) +
   geom_boxplot()
 #histogram of average grades
 # grades vs romance
-ggplot(df.merged, aes(x=romantic, y=avggrades, group=romantic)) +
+ggplot(df.merged, aes(x=romantic, y=G3, group=romantic)) +
   geom_boxplot()
 # schools vs grades
-ggplot(df.merged, aes(x=school, y=avggrades, group=school)) +
+ggplot(df.merged, aes(x=school, y=G3, group=school)) +
   geom_boxplot()
 # ages vs grades
-ggplot(df.merged, aes(x=age, y=avggrades, group=age)) +
+ggplot(df.merged, aes(x=age, y=G3, group=age)) +
   geom_boxplot()
 # internet vs grades
-ggplot(df.merged, aes(x=internet, y=avggrades, group=internet)) +
+ggplot(df.merged, aes(x=internet, y=G3, group=internet)) +
   geom_boxplot()
 # absences vs walc
 ggplot(df.merged, aes(x=Dalc, y=absences, group=Dalc)) +
   geom_boxplot()
-mosthighlyratedcorrelated?
 plot(df.merged$Mjob)
 table(df.merged$Mjob)
