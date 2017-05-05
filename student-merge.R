@@ -31,9 +31,9 @@ df.merged$avggrades=rowMeans(cbind(df.merged$G1,df.merged$G2,df.merged$G3))
 str(df.merged)
 df.merged<-df.merged[,-31:-32]
 # create pass/fail grade
-df.merged$grade<- ifelse(df.merged$G3>=9,'Pass','Fail')
+df.merged$grade<- ifelse(df.merged$G3>=9,1,0)
 #convert to factor..why is it 1 and 2?
-df.merged$grade<-as.factor(df.merged$grade)
+#df.merged$grade<-as.factor(df.merged$grade)
 ggplot(df.merged, aes(x=Walc,y=G3, group=Walc)) +
   geom_boxplot()
 #weekly alcohol levels vs passing grade
@@ -59,8 +59,16 @@ ggplot(df.merged, aes(x=age, y=G3, group=age)) +
 # internet vs grades
 ggplot(df.merged, aes(x=internet, y=G3, group=internet)) +
   geom_boxplot()
-# absences vs walc
+# absences vs Dalc
 ggplot(df.merged, aes(x=Dalc, y=absences, group=Dalc)) +
   geom_boxplot()
-plot(df.merged$Mjob)
-table(df.merged$Mjob)
+# univariate analysis of Grade
+ggplot(df.merged, aes(x=grade)) +
+  geom_bar()
+str(df.merged)
+df.merged$grade <- as.integer(df.merged$grade)
+# create dummy data
+df.Dummy <- dummyVars("~.",data=df.merged,fullRank=T)
+df.merged <- as.data.frame(predict(df.Dummy,df.merged))
+#print(names(df.merged))
+str(df.merged)
