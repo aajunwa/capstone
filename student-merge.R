@@ -32,20 +32,25 @@ str(df.merged)
 df.merged<-df.merged[,-31:-32]
 # create pass/fail grade
 df.merged$grade<- ifelse(df.merged$G3>=9,1,0)
-#convert to factor..why is it 1 and 2?
 #df.merged$grade<-as.factor(df.merged$grade)
 ggplot(df.merged, aes(x=Walc,y=G3, group=Walc)) +
   geom_boxplot()
 #weekly alcohol levels vs passing grade
 #plot(is.character(df.merged$grade)~df.merged$Walc)
 #table(df.merged$age)
-boxplot(df.merged$G3~df.merged$age)
+boxplot(df.merged$G3~df.merged$age, main='Score Variance by Age')
 # school support vs grades
 ggplot(df.merged, aes(x=schoolsup, y=G3, group=schoolsup)) +
-  geom_boxplot()
+  geom_boxplot() +
+  xlab("School Support") +
+  ylab("Final Grade")
+  ggtitle("School Support vs Final Grade")
 # grades vs daily alcohol
 ggplot(df.merged, aes(x=Dalc, y=G3, group=Dalc)) +
-  geom_boxplot()
+  geom_boxplot()+
+  xlab("Daily Alcohol Consumption") +
+  ylab("Final Grade")
+ggtitle("Daily Alcohol Consumption vs Final Grade")
 #histogram of average grades
 # grades vs romance
 ggplot(df.merged, aes(x=romantic, y=G3, group=romantic)) +
@@ -69,6 +74,8 @@ str(df.merged)
 df.merged$grade <- as.integer(df.merged$grade)
 # create dummy data
 df.Dummy <- dummyVars("~.",data=df.merged,fullRank=T)
-df.merged <- as.data.frame(predict(df.Dummy,df.merged))
+df.schools <- as.data.frame(predict(df.Dummy,df.merged))
 #print(names(df.merged))
-str(df.merged)
+str(df.schools)
+#distribution of outcome variable.names()
+prop.table(table(df.schools$grade))
