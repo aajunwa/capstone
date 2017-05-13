@@ -28,17 +28,24 @@ df.merged$avggrades=rowMeans(cbind(df.merged$G1,df.merged$G2,df.merged$G3))
 # and drop grades in 3 marking periods.
 #df.merged<-df.merged[,-(31:33)]
 # grades vs Weekly alcohol
+df.merged$grade<- ifelse(df.merged$G3>=9,1,0)
 str(df.merged)
+summary(df.merged)
+table(df.merged$grade)
+boxplot(df.merged$G3, main='Final Score Central Tendency')
 df.merged<-df.merged[,-31:-32]
 # create pass/fail grade
-df.merged$grade<- ifelse(df.merged$G3>=9,1,0)
 #df.merged$grade<-as.factor(df.merged$grade)
+hist(df.merged$G3, main="Final Grades Spread", xlab="Final Score")
 ggplot(df.merged, aes(x=Walc,y=G3, group=Walc)) +
-  geom_boxplot()
+  geom_boxplot() +
+  xlab("Weekly Alcohol") +
+  ylab("Final Grades")
+ggtitle("Weekly Alcohol Consumption vs Final Grades")
 #weekly alcohol levels vs passing grade
 #plot(is.character(df.merged$grade)~df.merged$Walc)
 #table(df.merged$age)
-boxplot(df.merged$G3~df.merged$age, main='Score Variance by Age')
+boxplot(df.merged$G3~df.merged$age, main='Final Score Variance by Age', xlab="Age")
 # school support vs grades
 ggplot(df.merged, aes(x=schoolsup, y=G3, group=schoolsup)) +
   geom_boxplot() +
@@ -67,6 +74,7 @@ ggplot(df.merged, aes(x=internet, y=G3, group=internet)) +
 # absences vs Dalc
 ggplot(df.merged, aes(x=Dalc, y=absences, group=Dalc)) +
   geom_boxplot()
+#acohol vs age
 # univariate analysis of Grade
 ggplot(df.merged, aes(x=grade)) +
   geom_bar()
@@ -79,3 +87,39 @@ df.schools <- as.data.frame(predict(df.Dummy,df.merged))
 str(df.schools)
 #distribution of outcome variable.names()
 prop.table(table(df.schools$grade))
+#df.schools$G3=as.factor((df.schools$G3))
+hist(df.schools$G3)
+str(df.schools)
+cor(df.schools)
+# correlations
+cor.prob <- function (X, dfr = nrow(X) - 2) {
+  R <- cor(X, use="pairwise.complete.obs")
+  above <- row(R) < col(R)
+  r2 <- R[above]^2
+  Fstat <- r2 * dfr/(1 - r2)
+  R[above] <- 1 - pf(Fstat, 1, dfr)
+  R[row(R) == col(R)] <- NA
+  R
+}
+
+flattenSquareMatrix <- function(m) {
+  if( (class(m) != "matrix") | (nrow(m) != ncol(m))) stop("Must be a square matrix.") 
+  if(!identical(rownames(m), colnames(m))) stop("Row and column names must be equal.")
+  ut <- upper.tri(m)
+  data.frame(i = rownames(m)[row(m)[ut]],
+             j = rownames(m)[col(m)[ut]],
+             cor=t(m)[ut],
+             p=m[ut])
+}
+
+
+corMasterList <- flattenSquareMatrix (cor.prob(df.schools))
+print(head(corMasterList,20))
+
+corList <- corMasterList[order(-abs(corMasterList$cor)),]
+print(head(corList,10))
+
+selectedSub <- subset(corList, (abs(cor) > 0.15 & j == 'grade'))
+print(selectedSub)
+
+
