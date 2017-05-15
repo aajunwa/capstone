@@ -1,6 +1,7 @@
 library(ggplot2)
 library(dplyr)
 library(caret)
+library(plyr)
 d1=read.table("student-mat.csv",sep=",",header=TRUE)
 d2=read.table("student-por.csv",sep=",",header=TRUE)
 d4=merge(d1,d2,by=c("school","sex","age","address","famsize","Pstatus",
@@ -29,7 +30,14 @@ df.merged$avggrades=rowMeans(cbind(df.merged$G1,df.merged$G2,df.merged$G3))
 #df.merged<-df.merged[,-(31:33)]
 # grades vs Weekly alcohol
 df.merged$grade<- ifelse(df.merged$G3>=9,1,0)
+df.merged$Medu<-as.character(df.merged$Medu)
+df.merged$Medu<-ifelse(df.merged$Medu,1,0)
+revalue(df.merged$Medu, c("0" = "None", "1" = "4th grade", "2" = "5th to 9th grade", "3" = "Secondary Education", "4" = "Higher Education"))
+revalue(df.merged$Fedu, c(0 = "None", 1 = "4th grade", 2 = "5th to 9th grade", 3 = "Secondary Education", 4 = "Higher Education"))
+revalue(df.merged$traveltime, c(1 = "<15 min", 2 = "15-30 mins", 3 = "30min-1hour", 4 = ">1 hour"))
+revalue(df.merged$studytime, c(1 = "<2hours", 2 = "2-5hours", 3 = "5-10hours", 4 = ">10 hours"))
 str(df.merged)
+table(df.merged$Medu)
 summary(df.merged)
 table(df.merged$grade)
 boxplot(df.merged$G3, main='Final Score Central Tendency')
@@ -117,9 +125,9 @@ corMasterList <- flattenSquareMatrix (cor.prob(df.schools))
 print(head(corMasterList,20))
 
 corList <- corMasterList[order(-abs(corMasterList$cor)),]
-print(head(corList,10))
+print(head(corList,60))
 
-selectedSub <- subset(corList, (abs(cor) > 0.15 & j == 'grade'))
+selectedSub <- subset(corList, (abs(cor) > 0.10 & j == 'G3'))
 print(selectedSub)
-
+#str(df.schools)
 
