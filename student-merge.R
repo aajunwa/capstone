@@ -5,9 +5,9 @@ library(plyr)
 d1=read.table("student-mat.csv",sep=",",header=TRUE)
 d2=read.table("student-por.csv",sep=",",header=TRUE)
 d4=merge(d1,d2,by=c("school","sex","age","address","famsize","Pstatus",
-                    "Medu","Fedu","Mjob","Fjob","reason","nursery","internet",
+                    "Medu","Fedu","Mjob","Fjob","reason",
                     "guardian","traveltime","studytime","failures",
-                    "schoolsup","famsup","activities","higher","romantic",
+                    "schoolsup","famsup","activities","nursery","higher","internet","romantic",
                     "famrel","freetime","goout","Dalc","Walc","health","absences"))
 print(nrow(d4)) # 85 students
 str(d4)
@@ -15,8 +15,7 @@ str(d4)
 #average math and port scores
 d4$meanMath <- rowMeans(subset(d4, select = c(G1.x, G2.x,G3.x)), na.rm = TRUE)
 d4$meanPort <- rowMeans(subset(d4, select = c(G1.y, G2.y,G3.y)), na.rm = TRUE)
-plot(d4$meanMath,d4$meanPort, col=d4$Walc)
-library(ggplot2)
+#plot(d4$meanMath,d4$meanPort, col=d4$Walc)
 d3<-rbind(d1,d2) #combine the two datasets
 # and eliminate the repeats:
 df.merged<-d3 %>% distinct(school,sex,age,address,famsize,Pstatus,
@@ -26,24 +25,36 @@ df.merged<-d3 %>% distinct(school,sex,age,address,famsize,Pstatus,
                              romantic,famrel,freetime,goout,Dalc,Walc,health,absences, .keep_all = TRUE)
 #add a column with average grades (math or Portuguese, whichever is available)
 df.merged$avggrades=rowMeans(cbind(df.merged$G1,df.merged$G2,df.merged$G3))
+df.merged<-df.merged[,-31:-32]
+str(df.merged)
 # and drop grades in 3 marking periods.
 #df.merged<-df.merged[,-(31:33)]
 # grades vs Weekly alcohol
+str(df.merged$Medu)
 df.merged$grade<- ifelse(df.merged$G3>=9,1,0)
-df.merged$Medu<-as.character(df.merged$Medu)
-df.merged$Medu<-ifelse(df.merged$Medu,1,0)
-revalue(df.merged$Medu, c("0" = "None", "1" = "4th grade", "2" = "5th to 9th grade", "3" = "Secondary Education", "4" = "Higher Education"))
-revalue(df.merged$Fedu, c(0 = "None", 1 = "4th grade", 2 = "5th to 9th grade", 3 = "Secondary Education", 4 = "Higher Education"))
-revalue(df.merged$traveltime, c(1 = "<15 min", 2 = "15-30 mins", 3 = "30min-1hour", 4 = ">1 hour"))
-revalue(df.merged$studytime, c(1 = "<2hours", 2 = "2-5hours", 3 = "5-10hours", 4 = ">10 hours"))
-str(df.merged)
-table(df.merged$Medu)
-summary(df.merged)
-table(df.merged$grade)
+
+df.merged$Medu[df.merged$Medu == "0"] <- "None"
+df.merged$Medu[df.merged$Medu == "1"] <- "4th grade"
+df.merged$Medu[df.merged$Medu == "2"] <- "5th to 9th grade"
+df.merged$Medu[df.merged$Medu == "3"] <- "Secondary Education"
+df.merged$Medu[df.merged$Medu == "4"] <- "Higher Education"
+df.merged$Medu<-as.factor(df.merged$Medu)
+#recode traveltime
+df.merged$traveltime[df.merged$traveltime == "1"] <- "<15 min"
+df.merged$traveltime[df.merged$traveltime == "2"] <- "15-30 mins"
+df.merged$traveltime[df.merged$traveltime == "3"] <- "30min-1hour"
+df.merged$traveltime[df.merged$traveltime == "4"] <- ">1 hour"
+df.merged$traveltime<-as.factor(df.merged$traveltime)
+#recode studytime
+df.merged$studytime[df.merged$studytime == "1"] <- "<2hours"
+df.merged$studytime[df.merged$studytime == "2"] <- "2-5hours"
+df.merged$studytime[df.merged$studytime == "3"] <- "30min-1hour"
+df.merged$studytime[df.merged$studytime == "4"] <- "5-10hours"
+df.merged$studytime<-as.factor(df.merged$studytime)
+# central tendency
 boxplot(df.merged$G3, main='Final Score Central Tendency')
-df.merged<-df.merged[,-31:-32]
-# create pass/fail grade
-#df.merged$grade<-as.factor(df.merged$grade)
+#spread of outcome variable
+prop.table(table(df.merged$grade))
 hist(df.merged$G3, main="Final Grades Spread", xlab="Final Score")
 ggplot(df.merged, aes(x=Walc,y=G3, group=Walc)) +
   geom_boxplot() +
@@ -130,4 +141,35 @@ print(head(corList,60))
 selectedSub <- subset(corList, (abs(cor) > 0.10 & j == 'G3'))
 print(selectedSub)
 #str(df.schools)
+#
+#
+#
+#sort out outcome variable
+outcomeName <- 'grade'
+predictorsNames <- names(df.schools)[names(df.schools) != outcomeName]
+#classification
+df.schools$grade2 <- ifelse(df.schools$grade=="1",'pass','fail')
+df.schools$grade2 <- as.factor(df.schools$grade)
+outcomeName <- 'grade2'
+#split data into test and training
+set.seed(1234)
+splitIndex <- createDataPartition(df.schools[,outcomeName], p = .75, list = FALSE, times = 1)
+trainDF <- df.schools[ splitIndex,]
+testDF  <- df.schools[-splitIndex,]
+#validation harness
+objControl <- trainControl(method='cv', number=3, returnResamp='none', summaryFunction = twoClassSummary, classProbs = TRUE)
+#train model
+objModel <- train(df.schools[,predictorsNames], df.schools[,outcomeName], 
+                  method='gbm', 
+                  trControl=objControl,  
+                  metric = "ROC",
+                  preProc = c("center", "scale"))
+#view variable importance
+summary(objModel)
+
+
+
+
+
+
 
