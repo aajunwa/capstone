@@ -70,13 +70,20 @@ df.merged$Mjob<-as.factor(df.merged$Mjob)
 df.merged$Fjob<-as.character(df.merged$Fjob)
 df.merged$Fjob[df.merged$Fjob == "at_home"] <- "stayhome"
 df.merged$Fjob<-as.factor(df.merged$Fjob)
-##
+## Medu
 df.merged$Medu[df.merged$Medu == "0"] <- "No-Grade"
 df.merged$Medu[df.merged$Medu == "1"] <- "forththPass"
 df.merged$Medu[df.merged$Medu == "2"] <- "fifth-9th-Grade"
 df.merged$Medu[df.merged$Medu == "3"] <- "Secondary-Education"
 df.merged$Medu[df.merged$Medu == "4"] <- "Higher-Education"
 df.merged$Medu<-as.factor(df.merged$Medu)
+# Fedu
+df.merged$Fedu[df.merged$Fedu == "0"] <- "No-Grade"
+df.merged$Fedu[df.merged$Fedu == "1"] <- "forththPass"
+df.merged$Fedu[df.merged$Fedu == "2"] <- "fifth-9th-Grade"
+df.merged$Fedu[df.merged$Fedu == "3"] <- "Secondary-Education"
+df.merged$Fedu[df.merged$Fedu == "4"] <- "Higher-Education"
+df.merged$Fedu<-as.factor(df.merged$Fedu)
 #recode traveltime
 df.merged$traveltime[df.merged$traveltime == "1"] <- "under15mins"
 df.merged$traveltime[df.merged$traveltime == "2"] <- "fifteen-30mins"
@@ -219,9 +226,6 @@ myFS.class$PPlabels$Input_no <-  as.numeric(rownames(myFS.class$PPlabels))
 results <- merge(x=results, y=myFS.class$PPlabels, by="Input_no", all.x=T)
 results <- results[order(-results$SUM),] 
 print(head(results),10)
-
-
-
 
 
 
