@@ -25,12 +25,13 @@ df.merged<-d3 %>% distinct(school,sex,age,address,famsize,Pstatus,
                              schoolsup, famsup,activities,nursery,higher,internet,
                              romantic,famrel,freetime,goout,Dalc,Walc,health,absences, .keep_all = TRUE)
 #add a column with average passs (math or Portuguese, whichever is available)
-df.merged$avgpasss=rowMeans(cbind(df.merged$G1,df.merged$G2,df.merged$G3))
+df.merged$avgpass=rowMeans(cbind(df.merged$G1,df.merged$G2,df.merged$G3))
+#cor(df.merged[,31:33])
 df.merged<-df.merged[,-31:-32]
-str(df.merged)
-# and drop passs in 3 marking periods.
+#names(df.merged)
+# and drop pass in 3 marking periods.
 #df.merged<-df.merged[,-(31:33)]
-# passs vs Weekly alcohol
+# pass vs Weekly alcohol
 str(df.merged$Medu)
 df.merged$pass<- ifelse(df.merged$G3>=9,1,0)
 # fix all the yes and nos as they are reserved words
@@ -77,6 +78,13 @@ df.merged$Medu[df.merged$Medu == "2"] <- "fifth-9th-Grade"
 df.merged$Medu[df.merged$Medu == "3"] <- "Secondary-Education"
 df.merged$Medu[df.merged$Medu == "4"] <- "Higher-Education"
 df.merged$Medu<-as.factor(df.merged$Medu)
+#goout
+df.merged$goout[df.merged$goout == "1"] <- "xx1"
+df.merged$goout[df.merged$goout == "2"] <- "xx2"
+df.merged$goout[df.merged$goout == "3"] <- "xx3"
+df.merged$goout[df.merged$goout == "4"] <- "xx4"
+df.merged$goout[df.merged$goout == "5"] <- "xx5"
+df.merged$goout<-as.factor(df.merged$goout)
 # Fedu
 df.merged$Fedu[df.merged$Fedu == "0"] <- "No-Grade"
 df.merged$Fedu[df.merged$Fedu == "1"] <- "forththPass"
@@ -142,13 +150,14 @@ ggplot(df.merged, aes(x=Dalc, y=absences, group=Dalc)) +
 # univariate analysis of pass
 ggplot(df.merged, aes(x=pass)) +
   geom_bar()
+
 str(df.merged)
 df.merged$pass <- as.integer(df.merged$pass)
 # create dummy data
 df.Dummy <- dummyVars("~.",data=df.merged,fullRank=T)
 df.schools <- as.data.frame(predict(df.Dummy,df.merged))
 #print(names(df.merged))
-str(df.schools)
+#str(df.schools)
 #distribution of outcome variable.names()
 prop.table(table(df.schools$pass))
 #df.schools$G3=as.factor((df.schools$G3))
@@ -183,7 +192,7 @@ print(head(corMasterList,20))
 corList <- corMasterList[order(-abs(corMasterList$cor)),]
 print(head(corList,60))
 
-selectedSub <- subset(corList, (abs(cor) > 0.10 & j == 'G3'))
+selectedSub <- subset(corList, (abs(cor) > 0.10 & j == 'pass'))
 print(selectedSub)
 #str(df.schools)
 #sort out outcome variable
@@ -192,6 +201,8 @@ predictorsNames <- names(df.schools)[names(df.schools) != outcomeName]
 #classification
 df.schools$pass <- as.factor(ifelse(df.schools$pass==1,'P','F'))
 #split data into test and training
+#remove g3 variable
+df.schools$G3<- NULL
 set.seed(1234)
 splitIndex <- createDataPartition(df.schools[,outcomeName], p = .75, list = FALSE, times = 1)
 trainDF <- df.schools[ splitIndex,]
@@ -202,7 +213,7 @@ myFS.class <-fscaret(trainDF, testDF, myTimeLimit = 20,
                      preprocessData=TRUE, with.labels=TRUE,
                      classPred=TRUE,
                      regPred=FALSE,
-                     Used.funcClassPred=c("gbm","glmnet","rf"),
+                     Used.funcClassPred=c("glm","glmnet","rf","rpart","knn"),
                      supress.output=FALSE, no.cores=NULL,
                      saveModel=FALSE)
 ##
@@ -226,9 +237,42 @@ myFS.class$PPlabels$Input_no <-  as.numeric(rownames(myFS.class$PPlabels))
 results <- merge(x=results, y=myFS.class$PPlabels, by="Input_no", all.x=T)
 results <- results[order(-results$SUM),] 
 print(head(results),10)
+#str(df.schools)
+# 
+# trainDF_truncated <- trainDF[, c(head(as.character(results$Labels),5),
+#                                  'pass')] 
+# testDF_truncated <- testDF[,setdiff(names(trainDF_truncated), 'pass')]
+trainControl <- trainControl(method="repeatedcv", number=10, repeats=3) 
+metric <- "Accuracy"
 
 
+# method_names <- c("glm","glmnet","rf","rpart","knn") 
+# for (method_name in method_names) { 
+#   print(method_name)
+#   set.seed(1234)
+#   model <- train(pass~., data=trainDF_truncated,
+#                  method=funcClassPred[funcClassPred==method_name],
+#                  metric='roc', trControl=objControl)
+#   predictions <- predict(object=model,
+#                          testDF[,setdiff(names(trainDF_truncated), 'pass')], type='prob')
+#   print(auc(predictor=predictions[[2]],response=ifelse(testDF$pass=='P',1,0)))
+#   }
 
-
-
+# rf
+set.seed(7)
+fit.rf <- train(pass~., data=trainDF, method="rf", metric=metric, preProc=c("center", "scale"), trControl=trainControl)
+# GLM
+set.seed(7)
+fit.glm <- train(pass~., data=trainDF, method="glm", metric=metric, preProc=c("center", "scale"), trControl=trainControl)
+# GLMNET
+set.seed(7)
+fit.glmnet <- train(pass~., data=trainDF, method="glmnet", metric=metric, preProc=c("center", "scale"), trControl=trainControl)
+# KNN
+set.seed(7)
+fit.knn <- train(pass~., data=trainDF, method="knn", metric=metric, preProc=c("center", "scale"), trControl=trainControl)
+#summarize results
+results <- resamples(list(GLM=fit.glm, RF=fit.rf, GLMNET=fit.glmnet, KNN=fit.knn))
+summary(results)
+#dotplot(results)
+plot(varImp(fit.glmnet,scale=F))
 
