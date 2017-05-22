@@ -104,7 +104,19 @@ df.merged$studytime<-as.factor(df.merged$studytime)
 # check correlations
 correlations <- cor(df.merged[,c(3,15,24,25,27,28,29,30,31,32)])
 corrplot(correlations, method="circle")
-??corrplot
+# remove correlated attributes
+# find attributes that are highly correlated
+# set.seed(7)
+# cutoff <- 0.60
+# #correlations <- cor(dataset[,1:13])
+# highlyCorrelated <- findCorrelation(correlations, cutoff=cutoff)
+# for (value in highlyCorrelated)
+#   { print(names(df.merged)[value]) 
+# }
+# datasetFeatures <- dataset[,-highlyCorrelated]
+# dim(datasetFeatures)
+
+#pairs(correlations)
 # central tendency
 boxplot(df.merged$G3, main='Final Score Central Tendency')
 #spread of outcome variable
@@ -123,25 +135,53 @@ boxplot(df.merged$G3~df.merged$age, main='Final Score Variance by Age', xlab="Ag
 ggplot(df.merged, aes(x=schoolsup, y=G3, group=schoolsup)) +
   geom_boxplot() +
   xlab("School Support") +
-  ylab("Final pass")
+  ylab("Final pass") +
   ggtitle("School Support vs Final pass")
-# passs vs daily alcohol
+  # hypothesis: pass rate lowest for oldest students
+  ggplot(df.merged, aes(x=age, fill=factor(pass))) +
+    geom_bar(width=0.5)+
+    xlab("Age") +
+    ylab("Total Count") +
+    labs(fill='Passed') +
+    ggtitle("Pass Rate by Age")
+  # hypothesis: moderate to average weekly drinking reduced Pass Rate
+  ggplot(df.merged, aes(x=Walc, fill=factor(pass))) +
+    geom_bar(width=0.5)+
+    xlab("Weekly Alcohol Consumption") +
+    ylab("Total Count") +
+    labs(fill='Passed') +
+    ggtitle("Pass Rate by Weekly Alcohol consumption")
+  #hypothesis: moderate to average daily drinking reduced Pass Rate
+  ggplot(df.merged, aes(x=Dalc, fill=factor(pass))) +
+    geom_bar(width=0.5)+
+    xlab("Daily Alcohol Consumption") +
+    ylab("Total Count") +
+    labs(fill='Passed') +
+    ggtitle("Pass Rate by Daily Alcohol consumption")
+  # hypothesis: increased travel time reduces Pass Rate
+  ggplot(df.merged, aes(x=traveltime, fill=factor(pass))) +
+    geom_bar(width=0.5)+
+    xlab("Travel Time") +
+    ylab("Total Count") +
+    labs(fill='Passed') +
+    ggtitle("Pass Rate by Travel Time")
+# pass vs daily alcohol
 ggplot(df.merged, aes(x=Dalc, y=G3, group=Dalc)) +
   geom_boxplot()+
   xlab("Daily Alcohol Consumption") +
   ylab("Final pass")
 ggtitle("Daily Alcohol Consumption vs Final pass")
-#histogram of average passs
-# passs vs romance
+#histogram of average pass
+# pass vs romance
 ggplot(df.merged, aes(x=romantic, y=G3, group=romantic)) +
   geom_boxplot()
-# schools vs passs
+# schools vs pass
 ggplot(df.merged, aes(x=school, y=G3, group=school)) +
   geom_boxplot()
-# ages vs passs
+# ages vs pass
 ggplot(df.merged, aes(x=age, y=G3, group=age)) +
   geom_boxplot()
-# internet vs passs
+# internet vs pass
 ggplot(df.merged, aes(x=internet, y=G3, group=internet)) +
   geom_boxplot()
 # absences vs Dalc
@@ -198,7 +238,7 @@ predictorsNames <- names(df.schools)[names(df.schools) != outcomeName]
 #classification
 df.schools$pass <- as.factor(ifelse(df.schools$pass==1,'P','F'))
 #split data into test and training
-#remove g3 variable
+#remove G3 variable
 df.schools$G3<- NULL
 set.seed(1234)
 splitIndex <- createDataPartition(df.schools[,outcomeName], p = .75, list = FALSE, times = 1)
@@ -274,6 +314,6 @@ summary(results)
 plot(varImp(fit.glmnet,scale=F), main ="Variable Importance - GLMNET")
 plot(varImp(fit.glm,scale=F), main ="Variable Importance - GLM")
 plot(varImp(fit.gbm,scale=F), main ="Variable Importance - GBM")
-plot(varImp.(fit.gbm,scale=F), main ="Variable Importance - GBM")
+#plot(varImp.(fit.rf,scale=F), main ="Variable Importance - RF")
 ##
 
