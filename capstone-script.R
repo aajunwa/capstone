@@ -2,7 +2,7 @@ library(ggplot2)
 library(plyr)
 library(dplyr)
 library(caret)
-library(rminer)
+library(pROC)
 library(corrplot)
 d1=read.table("student-mat.csv",sep=",",header=TRUE)
 d2=read.table("student-por.csv",sep=",",header=TRUE)
@@ -260,7 +260,7 @@ testDF  <- df.schools[-splitIndex,]
 # results <- results[order(-results$SUM),] 
 # print(head(results),10)
 # Train data
-trainControl <- trainControl(method="repeatedcv", number=10, repeats=3, summaryFunction=twoClassSummary,  returnResamp='none', verboseIter = FALSE, classProbs = TRUE) 
+trainControl <- trainControl(method="repeatedcv", number=10, repeats=3, summaryFunction=twoClassSummary,  returnResamp='all', verboseIter = FALSE, classProbs = TRUE) 
 metric <- "ROC"
 # build models
 set.seed(7)
@@ -282,16 +282,20 @@ set.seed(7)
 results <- resamples(list(GLM=fit.glm, GBM=fit.gbm, RF=fit.rf, GLMNET=fit.glmnet, KNN=fit.knn))
 summary(results)
 bwplot(results,layout = c(3,1))
-# plot(varImp(fit.glmnet,scale=F), main ="Variable Importance - GLMNET")
-# plot(varImp(fit.glm,scale=F), main ="Variable Importance - GLM")
-# plot(varImp(fit.gbm,scale=F), main ="Variable Importance - GBM")
-#plot(varImp.(fit.rf,scale=F), main ="Variable Importance - RF")
+plot(varImp(object=fit.rf),main="RF - Variable Importance")
+plot(varImp(object=fit.glm),main="GLM - Variable Importance")
+plot(varImp(object=fit.glmnet),main="GLMNET - Variable Importance")
+plot(varImp(object=fit.knn),main="KNN - Variable Importance")
 summary(fit.gbm)
-#predictions <- predict(object=fit.gbm, testDF[,predictorsNames], type='raw')
-#head(predictions)
-# ?rminer:: fit
 varImp(object=fit.gbm)
-?plot
 plot(varImp(object=fit.gbm),main="GBM - Variable Importance")
 predictions <- predict(object=fit.gbm, testDF[,predictorsNames], type='raw')
 head(predictions)
+# Accuracy and Kappa
+print(postResample(pred=predictions, obs=as.factor(testDF[,outcomeName])))
+## Probabilities
+predictions <- predict(object=fit.gbm, testDF[,predictorsNames], type='prob')
+head(predictions)
+# AUC Score
+auc <- roc(ifelse(testDF[,outcomeName]=="P",1,0), predictions[[2]])
+print(auc$auc)

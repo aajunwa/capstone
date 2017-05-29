@@ -5,16 +5,18 @@ date: "28 May 2017"
 output: pdf_document
 ---
 
-```{r results='asis', echo=FALSE, include=FALSE,}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+```{r}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 ```
 ```{r warning=FALSE}
 library(ggplot2)
 library(plyr)
 library(dplyr)
 library(caret)
-library(rminer)
+library(pROC)
 library(corrplot)
+suppressWarnings(library(caret))
+suppressWarnings(library(ggplot2))
 ```
 Merge both datasets into one
 
@@ -26,7 +28,6 @@ d4=merge(d1,d2,by=c("school","sex","age","address","famsize","Pstatus",
                     "guardian","traveltime","studytime","failures",
                     "schoolsup","famsup","activities","nursery","higher","internet","romantic",
                     "famrel","freetime","goout","Dalc","Walc","health","absences"))
-print(nrow(d4)) 
 d4$meanMath <- rowMeans(subset(d4, select = c(G1.x, G2.x,G3.x)), na.rm = TRUE)
 d4$meanPort <- rowMeans(subset(d4, select = c(G1.y, G2.y,G3.y)), na.rm = TRUE)
 d3<-rbind(d1,d2) 
@@ -41,7 +42,6 @@ df.merged<-d3 %>% distinct(school,sex,age,address,famsize,Pstatus,
 ```{r}
 df.merged<-df.merged[,-31:-32]
 #names(df.merged)
-str(df.merged$Medu)
 df.merged$pass<- ifelse(df.merged$G3>=9,1,0)
 ```
 
@@ -264,18 +264,19 @@ corList <- corMasterList[order(-abs(corMasterList$cor)),]
 print(head(corList,60))
 
 selectedSub <- subset(corList, (abs(cor) > 0.10 & j == 'pass'))
-print(selectedSub)
+#print(selectedSub)
 ```
 
 ```{r}
-#sort out outcome variable
+
+#remove G3 variable
+df.schools$G3<- NULL
+#Sort out Outcome variable
 outcomeName <- 'pass'
 predictorsNames <- names(df.schools)[names(df.schools) != outcomeName]
 #classification
 df.schools$pass <- as.factor(ifelse(df.schools$pass==1,'P','F'))
 #split data into test and training
-#remove G3 variable
-df.schools$G3<- NULL
 ```
 
 ```{r}
@@ -286,7 +287,7 @@ testDF  <- df.schools[-splitIndex,]
 ```
 
 ```{r}
-trainControl <- trainControl(method="repeatedcv", number=10, repeats=3, summaryFunction=twoClassSummary,returnResamp='none', verboseIter = FALSE, classProbs = TRUE) 
+trainControl <- trainControl(method="repeatedcv", number=10, repeats=3, summaryFunction=twoClassSummary,returnResamp='all', verboseIter = FALSE, classProbs = TRUE) 
 metric <- "ROC"
 ```
 
@@ -306,7 +307,7 @@ fit.gbm <- train(pass~., data=trainDF, method="gbm", metric=metric, preProc=c("c
 #summarize results
 set.seed(7)
 results <- resamples(list(GLM=fit.glm, GBM=fit.gbm, RF=fit.rf, GLMNET=fit.glmnet, KNN=fit.knn))
-summary(results)
+#summary(results)
 bwplot(results,layout = c(3,1))
 ```
 
@@ -314,5 +315,19 @@ bwplot(results,layout = c(3,1))
 ```{r}
 summary(fit.gbm)
 
+```
+
+```{r}
+plot(varImp(object=fit.gbm),main="GBM - Variable Importance")
+predictions <- predict(object=fit.gbm, testDF[,predictorsNames], type='raw')
+head(predictions)
+# Accuracy and Kappa
+print(postResample(pred=predictions, obs=as.factor(testDF[,outcomeName])))
+## Probabilities
+predictions <- predict(object=fit.gbm, testDF[,predictorsNames], type='prob')
+head(predictions)
+# AUC Score
+auc <- roc(ifelse(testDF[,outcomeName]=="P",1,0), predictions[[2]])
+print(auc$auc)
 ```
 
