@@ -94,7 +94,8 @@ df.merged$traveltime[df.merged$traveltime == "1"] <- "under15mins"
 df.merged$traveltime[df.merged$traveltime == "2"] <- "fifteen-30mins"
 df.merged$traveltime[df.merged$traveltime == "3"] <- "thirtymin-1hour"
 df.merged$traveltime[df.merged$traveltime == "4"] <- "over1hour"
-df.merged$traveltime<-as.factor(df.merged$traveltime)
+df.merged$traveltime <- factor(df.merged$traveltime, levels = c("under15mins", "fifteen-30mins", "thirtymin-1hour", "over1hour"))
+#df.merged$traveltime<-as.factor(df.merged$traveltime)
 #recode studytime
 df.merged$studytime[df.merged$studytime == "1"] <- "under2hours"
 df.merged$studytime[df.merged$studytime == "2"] <- "two-5hours"
@@ -178,7 +179,6 @@ ggplot(df.merged, aes(x=Dalc, y=absences, group=Dalc)) +
 # univariate analysis of pass
 ggplot(df.merged, aes(x=pass)) +
   geom_bar()
-
 str(df.merged)
 df.merged$pass <- as.integer(df.merged$pass)
 # create dummy data
@@ -219,14 +219,14 @@ print(head(corList,60))
 
 selectedSub <- subset(corList, (abs(cor) > 0.10 & j == 'pass'))
 print(selectedSub)
+#remove G3 variable
+df.schools$G3<- NULL
 #sort out outcome variable
 outcomeName <- 'pass'
 predictorsNames <- names(df.schools)[names(df.schools) != outcomeName]
 #classification
 df.schools$pass <- as.factor(ifelse(df.schools$pass==1,'P','F'))
 #split data into test and training
-#remove G3 variable
-df.schools$G3<- NULL
 set.seed(1234)
 splitIndex <- createDataPartition(df.schools[,outcomeName], p = .75, list = FALSE, times = 1)
 trainDF <- df.schools[ splitIndex,]
@@ -290,3 +290,8 @@ summary(fit.gbm)
 #predictions <- predict(object=fit.gbm, testDF[,predictorsNames], type='raw')
 #head(predictions)
 # ?rminer:: fit
+varImp(object=fit.gbm)
+?plot
+plot(varImp(object=fit.gbm),main="GBM - Variable Importance")
+predictions <- predict(object=fit.gbm, testDF[,predictorsNames], type='raw')
+head(predictions)
