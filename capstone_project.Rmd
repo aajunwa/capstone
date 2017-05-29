@@ -1,9 +1,24 @@
+---
+title: "capstone_markdown"
+author: "Olufemi George"
+date: "28 May 2017"
+output: pdf_document
+---
+
+```{r results='asis', echo=FALSE, include=FALSE,}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+```
+```{r warning=FALSE}
 library(ggplot2)
 library(plyr)
 library(dplyr)
 library(caret)
 library(rminer)
 library(corrplot)
+```
+Merge both datasets into one
+
+```{r}
 d1=read.table("student-mat.csv",sep=",",header=TRUE)
 d2=read.table("student-por.csv",sep=",",header=TRUE)
 d4=merge(d1,d2,by=c("school","sex","age","address","famsize","Pstatus",
@@ -11,27 +26,27 @@ d4=merge(d1,d2,by=c("school","sex","age","address","famsize","Pstatus",
                     "guardian","traveltime","studytime","failures",
                     "schoolsup","famsup","activities","nursery","higher","internet","romantic",
                     "famrel","freetime","goout","Dalc","Walc","health","absences"))
-print(nrow(d4)) # 85 students
-str(d4)
-#multivariate analysis
-#average math and port scores
+print(nrow(d4)) 
 d4$meanMath <- rowMeans(subset(d4, select = c(G1.x, G2.x,G3.x)), na.rm = TRUE)
 d4$meanPort <- rowMeans(subset(d4, select = c(G1.y, G2.y,G3.y)), na.rm = TRUE)
-#plot(d4$meanMath,d4$meanPort, col=d4$Walc)
-d3<-rbind(d1,d2) #combine the two datasets
-# and eliminate the repeats:
+d3<-rbind(d1,d2) 
 df.merged<-d3 %>% distinct(school,sex,age,address,famsize,Pstatus,
                              Medu,Fedu,Mjob,Fjob,reason,
                              guardian,traveltime,studytime,failures,
                              schoolsup, famsup,activities,nursery,higher,internet,
                              romantic,famrel,freetime,goout,Dalc,Walc,health,absences, .keep_all = TRUE)
-#add a column with average pass (math or Portuguese, whichever is available)
-#df.merged$avgpass=rowMeans(cbind(df.merged$G1,df.merged$G2,df.merged$G3))
+```
+
+
+```{r}
 df.merged<-df.merged[,-31:-32]
 #names(df.merged)
 str(df.merged$Medu)
 df.merged$pass<- ifelse(df.merged$G3>=9,1,0)
-# fix all the reserved words
+```
+
+
+```{r}
 df.merged$activities<-as.character(df.merged$activities)
 df.merged$romantic<-as.character(df.merged$romantic)
 df.merged$internet<-as.character(df.merged$internet)
@@ -101,95 +116,126 @@ df.merged$studytime[df.merged$studytime == "2"] <- "two-5hours"
 df.merged$studytime[df.merged$studytime == "3"] <- "thirtymin-1hour"
 df.merged$studytime[df.merged$studytime == "4"] <- "five-10hours"
 df.merged$studytime<-as.factor(df.merged$studytime)
+```
+
+xxxxxx
+
+```{r}
 # check correlations
 correlations <- cor(df.merged[,c(3,15,24,25,27,28,29,30,31,32)])
 corrplot(correlations, method="circle")
-# central tendency
+```
+
+```{r}
 boxplot(df.merged$G3, main='Final Score Central Tendency')
-#spread of outcome variable
+
+```
+
+```{r}
 prop.table(table(df.merged$pass))
 hist(df.merged$G3, main="Final passs Spread", xlab="Final Score")
 ggplot(df.merged, aes(x=Walc,y=G3, group=Walc)) +
   geom_boxplot() +
   xlab("Weekly Alcohol") +
   ylab("Final passs")
-ggtitle("Weekly Alcohol Consumption vs Final passs")
-#weekly alcohol levels vs passing pass
-#plot(is.character(df.merged$pass)~df.merged$Walc)
-#table(df.merged$age)
+ggtitle("Weekly Alcohol Consumption vs Final Pass")
+```
+
+```{r}
 boxplot(df.merged$G3~df.merged$age, main='Final Score Variance by Age', xlab="Age")
-# school support vs pass
+
+```
+
+```{r}
 ggplot(df.merged, aes(x=schoolsup, y=G3, group=schoolsup)) +
   geom_boxplot() +
   xlab("School Support") +
   ylab("Final pass") +
-  ggtitle("School Support vs Final pass")
-  # hypothesis: pass rate lowest for oldest students
-  ggplot(df.merged, aes(x=age, fill=factor(pass))) +
+  ggtitle("School Support vs Final Pass")
+```
+
+```{r}
+ggplot(df.merged, aes(x=age, fill=factor(pass))) +
     geom_bar(width=0.5)+
     xlab("Age") +
     ylab("Total Count") +
     labs(fill='Passed') +
     ggtitle("Pass Rate by Age")
-  # hypothesis: moderate to average weekly drinking reduced Pass Rate
-  ggplot(df.merged, aes(x=Walc, fill=factor(pass))) +
+```
+
+```{r}
+ggplot(df.merged, aes(x=Walc, fill=factor(pass))) +
     geom_bar(width=0.5)+
     xlab("Weekly Alcohol Consumption") +
     ylab("Total Count") +
     labs(fill='Passed') +
     ggtitle("Pass Rate by Weekly Alcohol consumption")
-  #hypothesis: moderate to average daily drinking reduced Pass Rate
-  ggplot(df.merged, aes(x=Dalc, fill=factor(pass))) +
+```
+
+```{r}
+ggplot(df.merged, aes(x=Dalc, fill=factor(pass))) +
     geom_bar(width=0.5)+
     xlab("Daily Alcohol Consumption") +
     ylab("Total Count") +
     labs(fill='Passed') +
     ggtitle("Pass Rate by Daily Alcohol consumption")
-  # hypothesis: increased travel time reduces Pass Rate
-  ggplot(df.merged, aes(x=traveltime, fill=factor(pass))) +
+```
+
+```{r}
+ ggplot(df.merged, aes(x=traveltime, fill=factor(pass))) +
     geom_bar(width=0.5)+
     xlab("Travel Time") +
     ylab("Total Count") +
     labs(fill='Passed') +
     ggtitle("Pass Rate by Travel Time")
-# pass vs daily alcohol
+```
+
+```{r}
 ggplot(df.merged, aes(x=Dalc, y=G3, group=Dalc)) +
   geom_boxplot()+
   xlab("Daily Alcohol Consumption") +
   ylab("Final pass")
 ggtitle("Daily Alcohol Consumption vs Final pass")
-#histogram of average pass
-# pass vs romance
+```
+
+```{r}
 ggplot(df.merged, aes(x=romantic, y=G3, group=romantic)) +
   geom_boxplot()
-# schools vs pass
+```
+
+```{r}
 ggplot(df.merged, aes(x=school, y=G3, group=school)) +
   geom_boxplot()
-# ages vs pass
+```
+
+```{r}
 ggplot(df.merged, aes(x=age, y=G3, group=age)) +
   geom_boxplot()
-# internet vs pass
+```
+
+```{r}
 ggplot(df.merged, aes(x=internet, y=G3, group=internet)) +
   geom_boxplot()
-# absences vs Dalc
+```
+
+```{r}
 ggplot(df.merged, aes(x=Dalc, y=absences, group=Dalc)) +
   geom_boxplot()
-#acohol vs age
-# univariate analysis of pass
+```
+
+```{r}
 ggplot(df.merged, aes(x=pass)) +
   geom_bar()
+```
 
-str(df.merged)
+```{r}
 df.merged$pass <- as.integer(df.merged$pass)
-# create dummy data
 df.Dummy <- dummyVars("~.",data=df.merged,fullRank=T)
 df.schools <- as.data.frame(predict(df.Dummy,df.merged))
-#distribution of outcome variable.names()
 prop.table(table(df.schools$pass))
-#df.schools$G3=as.factor((df.schools$G3))
-hist(df.schools$G3)
-cor(df.schools)
-# correlations
+```
+
+```{r}
 cor.prob <- function (X, dfr = nrow(X) - 2) {
   R <- cor(X, use="pairwise.complete.obs")
   above <- row(R) < col(R)
@@ -219,6 +265,9 @@ print(head(corList,60))
 
 selectedSub <- subset(corList, (abs(cor) > 0.10 & j == 'pass'))
 print(selectedSub)
+```
+
+```{r}
 #sort out outcome variable
 outcomeName <- 'pass'
 predictorsNames <- names(df.schools)[names(df.schools) != outcomeName]
@@ -227,66 +276,43 @@ df.schools$pass <- as.factor(ifelse(df.schools$pass==1,'P','F'))
 #split data into test and training
 #remove G3 variable
 df.schools$G3<- NULL
+```
+
+```{r}
 set.seed(1234)
 splitIndex <- createDataPartition(df.schools[,outcomeName], p = .75, list = FALSE, times = 1)
 trainDF <- df.schools[ splitIndex,]
 testDF  <- df.schools[-splitIndex,]
-#
-# run fscaret ensemble
-# myFS.class <-fscaret(trainDF, testDF, myTimeLimit = 20,
-#                      preprocessData=TRUE, with.labels=TRUE,
-#                      classPred=TRUE,
-#                      regPred=FALSE,
-#                      Used.funcClassPred=c("glm","glmnet","rf","rpart","knn"),
-#                      supress.output=FALSE, no.cores=NULL,
-#                      saveModel=FALSE)
-# ##
-#
-# #validation harness
-# objControl <- trainControl(method='cv', number=3, returnResamp='none', summaryFunction = twoClassSummary, classProbs = TRUE)
-# #train model
-# objModel <- train(trainDF[,predictorsNames], as.factor(trainDF$pass), 
-#                   method='gbm', 
-#                   trControl=objControl,  
-#                   metric = "ROC",
-#                   preProc = c("center", "scale"))
-# #view variable importance
-# summary(objModel)
-# results <-  myFS.class$VarImp$matrixVarImp.MeasureError
-# results$Input_no <- as.numeric(results$Input_no)
-# results <- results[,setdiff(names(results), c('SUM%','ImpGrad'))]
-# myFS.class$PPlabels$Input_no <-  as.numeric(rownames(myFS.class$PPlabels))
-# results <- merge(x=results, y=myFS.class$PPlabels, by="Input_no", all.x=T)
-# results <- results[order(-results$SUM),] 
-# print(head(results),10)
-# Train data
-trainControl <- trainControl(method="repeatedcv", number=10, repeats=3, summaryFunction=twoClassSummary,  returnResamp='none', verboseIter = FALSE, classProbs = TRUE) 
+```
+
+```{r}
+trainControl <- trainControl(method="repeatedcv", number=10, repeats=3, summaryFunction=twoClassSummary,returnResamp='none', verboseIter = FALSE, classProbs = TRUE) 
 metric <- "ROC"
-# build models
-set.seed(7)
+```
+
+```{r}
 fit.rf <- train(pass~., data=trainDF, method="rf", metric=metric, preProc=c("center", "scale"), trControl=trainControl)
-# GLM
-set.seed(7)
+#set.seed(7)
 fit.glm <- train(pass~., data=trainDF, method="glm", metric=metric, preProc=c("center", "scale"), trControl=trainControl)
 # GLMNET
-set.seed(7)
+#set.seed(7)
 fit.glmnet <- train(pass~., data=trainDF, method="glmnet", metric=metric, preProc=c("center", "scale"), trControl=trainControl)
 # KNN
-set.seed(7)
+#set.seed(7)
 fit.knn <- train(pass~., data=trainDF, method="knn", metric=metric, preProc=c("center", "scale"), trControl=trainControl)
 # GBM
-set.seed(7)
+#set.seed(7)
 fit.gbm <- train(pass~., data=trainDF, method="gbm", metric=metric, preProc=c("center", "scale"), trControl=trainControl, verbose=FALSE)
 #summarize results
 set.seed(7)
 results <- resamples(list(GLM=fit.glm, GBM=fit.gbm, RF=fit.rf, GLMNET=fit.glmnet, KNN=fit.knn))
 summary(results)
 bwplot(results,layout = c(3,1))
-# plot(varImp(fit.glmnet,scale=F), main ="Variable Importance - GLMNET")
-# plot(varImp(fit.glm,scale=F), main ="Variable Importance - GLM")
-# plot(varImp(fit.gbm,scale=F), main ="Variable Importance - GBM")
-#plot(varImp.(fit.rf,scale=F), main ="Variable Importance - RF")
+```
+
+
+```{r}
 summary(fit.gbm)
-#predictions <- predict(object=fit.gbm, testDF[,predictorsNames], type='raw')
-#head(predictions)
-# ?rminer:: fit
+
+```
+
