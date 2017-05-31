@@ -1,14 +1,18 @@
 ---
-title: "capstone_markdown"
+title: "The effect of Alcohol consumption on Student Grades"
 author: "Olufemi George"
 date: "28 May 2017"
 output: pdf_document
 ---
+The Project is to determine the correlation (if any) between alcohol consumption by students and their grades in 2 Portuguese Secondary Schools. We will also be looking at the importance/relevance of other variables in determining passing grades in this dataset based on the best performing model.
+
+This data shows Secondary School student achievement for two Portuguese schools.The data attributes include student grades, demographic, social and school related features) and was collected using school reports, surveys and questionnaires.
+
+The goal was to determine the correlation (if any) between alcohol consumption by students and their grades in school.We will also be looking at the importance/relevance of other variables in determining passing grades in this dataset based on the best performing model.
 
 ```{r}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 ```
-```{r warning=FALSE}
+```{r warning=FALSE,  echo=FALSE, include=FALSE}
 library(ggplot2)
 library(plyr)
 library(dplyr)
@@ -118,7 +122,6 @@ df.merged$studytime[df.merged$studytime == "4"] <- "five-10hours"
 df.merged$studytime<-as.factor(df.merged$studytime)
 ```
 
-xxxxxx
 
 ```{r}
 # check correlations
@@ -261,7 +264,7 @@ corMasterList <- flattenSquareMatrix (cor.prob(df.schools))
 print(head(corMasterList,20))
 
 corList <- corMasterList[order(-abs(corMasterList$cor)),]
-print(head(corList,60))
+print(head(corList,10))
 
 selectedSub <- subset(corList, (abs(cor) > 0.10 & j == 'pass'))
 #print(selectedSub)
@@ -274,12 +277,12 @@ df.schools$G3<- NULL
 #Sort out Outcome variable
 outcomeName <- 'pass'
 predictorsNames <- names(df.schools)[names(df.schools) != outcomeName]
-#classification
 df.schools$pass <- as.factor(ifelse(df.schools$pass==1,'P','F'))
 #split data into test and training
 ```
 
 ```{r}
+# Train the data
 set.seed(1234)
 splitIndex <- createDataPartition(df.schools[,outcomeName], p = .75, list = FALSE, times = 1)
 trainDF <- df.schools[ splitIndex,]
@@ -291,8 +294,11 @@ trainControl <- trainControl(method="repeatedcv", number=10, repeats=3, summaryF
 metric <- "ROC"
 ```
 
-```{r}
+```{r warning=FALSE}
+#RF
+#set.seed(7)
 fit.rf <- train(pass~., data=trainDF, method="rf", metric=metric, preProc=c("center", "scale"), trControl=trainControl)
+#GLM
 #set.seed(7)
 fit.glm <- train(pass~., data=trainDF, method="glm", metric=metric, preProc=c("center", "scale"), trControl=trainControl)
 # GLMNET
@@ -304,6 +310,10 @@ fit.knn <- train(pass~., data=trainDF, method="knn", metric=metric, preProc=c("c
 # GBM
 #set.seed(7)
 fit.gbm <- train(pass~., data=trainDF, method="gbm", metric=metric, preProc=c("center", "scale"), trControl=trainControl, verbose=FALSE)
+
+```
+
+```{r warning=FALSE}
 #summarize results
 set.seed(7)
 results <- resamples(list(GLM=fit.glm, GBM=fit.gbm, RF=fit.rf, GLMNET=fit.glmnet, KNN=fit.knn))
@@ -313,11 +323,13 @@ bwplot(results,layout = c(3,1))
 
 
 ```{r}
+# view details of GBM Model
 summary(fit.gbm)
 
 ```
 
 ```{r}
+#Plot variable importance of GBM Model
 plot(varImp(object=fit.gbm),main="GBM - Variable Importance")
 predictions <- predict(object=fit.gbm, testDF[,predictorsNames], type='raw')
 head(predictions)
